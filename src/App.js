@@ -34,7 +34,14 @@ class App extends Component {
       imageUrl: "",
       box: {},
       route: "signin",
-      isSignedIn: false
+      isSignedIn: false,
+      user:{
+        id:'',
+        name:'',
+        email: '',
+        entries: 0,
+        userId: ''
+      }
     };
   }
 
@@ -66,7 +73,16 @@ class App extends Component {
     app.models
       .predict(Clarifai.FACE_DETECT_MODEL, this.state.input)
       .then((response) => {
-        this.displayFaceBox(this.calculateFaceLocation(response));
+        if(response){
+          fetch('http://localhost:3001/image', {
+            method:'put',
+            headers: {'content-type':'application/json'},
+            body: JSON.stringify({
+              id: this.state.user.id,
+            })
+          })
+        }
+          this.displayFaceBox(this.calculateFaceLocation(response));
       })
       .catch((err) => console.log(err));
   };
@@ -80,6 +96,17 @@ class App extends Component {
     this.setState({route});
   }
 
+  loadUser = (user) => {
+    this.setState({user : {
+      id:user.id,
+      name:user.name,
+      email: user.email,
+      entries: user.entries,
+      userId: user.userId
+    }
+    });
+  }
+
   render() {
     const { imageUrl, isSignedIn, box, route } = this.state;
     return (
@@ -89,7 +116,7 @@ class App extends Component {
         {route === "home" ? (
           <div>
             <Logo />
-            <Rank />
+            <Rank name={this.state.user.name} entries={this.state.user.entries} />
             <ImageForm
               onInputChange={this.onInputChange}
               onButtonSubmit={this.onButtonSubmit}
@@ -100,8 +127,8 @@ class App extends Component {
             />
           </div>
         ) : (route === 'signin' 
-              ? <SignIn onRouteChange={this.onRouteChange} />
-              : <Register onRouteChange={this.onRouteChange}/>        
+              ? <SignIn loadUser={this.loadUser} onRouteChange={this.onRouteChange} />
+              : <Register loadUser={this.loadUser} onRouteChange={this.onRouteChange}/>        
         )}
       </div>
     );
